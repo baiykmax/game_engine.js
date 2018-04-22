@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>map editor</title>
+    <style media="screen">
+        div {
+            outline: 1px dashed lightblue;
+        }
+
+        /*.gua-inline-block {
+            display: inline-block;
+        }*/
+
+        canvas {
+            border: 1px black solid;
+        }
+
+        * {
+            margin: 0;
+        }
+    </style>
+    <script src='guagame/utils.js'></script>
+    <script src='guagame/config.js'></script>
+    <script src='level.js'></script>
+</head>
+
+<body>
+    <canvas id="id-canvas"
+    data-action='draw_tile'
+    width="500"
+    height="400">
+    </canvas>
+    <div class="gua-inline-block">
+        <img data-action='change_active_tile' src="img/block1.png" data-id='1'>
+        <img data-action='change_active_tile' src="img/block2.png" data-id='2'>
+        <img data-action='change_active_tile' src="img/block3.png" data-id='3'>
+        <img data-action='change_active_tile' src="img/reduction.png" data-id='4'>
+    </div>
+    <button class="gua-level-save" name="button">save level</button>
+    <br>
+    <input id=id-input-speed type="range" value="1">
+    <script src=map.js></script>
+    <script>
+
+        const es = sel => document.querySelectorAll(sel)
+
+        const bindAll = function (sel, eventName, callback) {
+            var l = es(sel)
+            for (var i = 0; i < l.length; i++) {
+                var input = l[i]
+                input.addEventListener(eventName, function(event) {
+                    callback(event)
+                })
+            }
+        }
+
+        const templateControl = function(key, item) {
+            var i = item
+            var t = `
+            <div class="">
+                <label>
+                    <input class="gua-auto-slider" type="range"
+                        value="${item.value}"
+                        data-value="config.${key}"
+                        max = ${item.max}
+                        min = ${item.min}
+                    >
+                    ${item._comment}：<span class="gua-label"></span>
+                </label>
+            </div>
+            `
+            return t
+        }
+
+        const insertControls = function() {
+            var div = e('.gua-controls')
+            var keys = Object.keys(config)
+            for (var k of keys) {
+                var item = config[k]
+                var html = templateControl(k, item)
+                div.insertAdjacentHTML('beforeend', html)
+            }
+        }
+
+        const actions = {
+            change_active_tile(event) {
+                let id = Number(event.target.dataset.id)
+                window.activeTile = event.target
+            },
+            draw_tile(event) {
+                let target = event.target
+                let rect = target.getBoundingClientRect()
+                let x = event.clientX
+                let y = event.clientY
+                let tileRowSize = 36
+                let tileColumnSize = 24
+                let i = Math.floor(x / tileRowSize)
+                let j = Math.floor(y / tileColumnSize)
+                let x1 = i * tileRowSize
+                let y1 = j * tileColumnSize
+                window.context.fillRect(x1, y1, tileRowSize, tileColumnSize)
+                window.context.drawImage(window.activeTile, x1, y1)
+            },
+        }
+
+        const tilePosition = (x, y) => {
+            let tileRowSize = 36
+            let tileColumnSize = 24
+            let i = Math.floor(x / tileRowSize)
+            let j = Math.floor(y / tileColumnSize)
+            let x1 = i * tileRowSize
+            let y1 = j * tileColumnSize
+            return [x1, y1]
+        }
+
+        const drawTileAt = (x, y) => {
+            let [x1, y1] = tilePosition(x, y)
+            let tileRowSize = 36
+            let tileColumnSize = 24
+            window.context.fillRect(x1, y1, tileRowSize, tileColumnSize)
+            window.context.drawImage(window.activeTile, x1, y1)
+            //
+            let tile = Number(window.activeTile.dataset.id)
+            window.map.setCoordinate(x1, y1, tile)
+            let mx = x1 / tileRowSize
+            let my = y1 / tileColumnSize
+            window.map.setTile(mx, my, tile)
+        }
+
+        const bindEvents = function() {
+            e('body').addEventListener('click', event => {
+                let action = event.target.dataset.action
+                actions[action] && actions[action](event)
+            })
+
+            let moving = false
+            window.canvas.addEventListener('mousedown', function(event) {
+                moving = true
+                let x = event.clientX
+                let y = event.clientY
+                drawTileAt(x, y)
+            })
+            window.canvas.addEventListener('mousemove', function(event) {
+                if (moving) {
+                    let x = event.clientX
+                    let y = event.clientY
+                    drawTileAt(x, y)
+                }
+            })
+            window.canvas.addEventListener('mouseup', function(event) {
+                moving = false
+            })
+            //
+            e('.gua-level-save').addEventListener('click', event => {
+                window.map.setLevel()
+                window.context.clearRect(0, 0, window.canvas.width, window.canvas.height)
+                window.context.fillStyle = "#FAEAC2"
+                window.context.fillRect(0, 0, 500, 400)
+            })
+        }
+
+        const init = () => {
+            window.map = new Map()
+            window.active_tile_id = null
+            window.canvas = e('canvas')
+            window.context = window.canvas.getContext('2d')
+            window.context.fillStyle = "#FAEAC2"
+            window.context.fillRect(0, 0, 500, 400)
+        }
+
+        const __main = function() {
+            init()
+            // 从配置生成 THML 控件
+            insertControls()
+            // 绑定事件
+            bindEvents()
+        }
+
+        __main()
+    </script>
+</body>
+
+</html>
