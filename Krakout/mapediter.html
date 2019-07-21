@@ -27,10 +27,7 @@
 </head>
 
 <body>
-    <canvas id="id-canvas"
-    data-action='draw_tile'
-    width="500"
-    height="400">
+    <canvas id="id-canvas" data-action='draw_tile' width="500" height="400">
     </canvas>
     <div class="gua-inline-block">
         <img data-action='change_active_tile' src="img/block1.png" data-id='1'>
@@ -129,7 +126,7 @@
             window.map.setTile(mx, my, tile)
         }
 
-        const bindEvents = function() {
+        const bindEvents = () => {
             e('body').addEventListener('click', event => {
                 let action = event.target.dataset.action
                 actions[action] && actions[action](event)
